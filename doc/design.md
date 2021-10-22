@@ -108,8 +108,7 @@ For convenience, a standalone binary executable is also provided for easy integr
 When bridging data, serialized data will be read from one domain and forwarded to another domain.
 As long as the bridge does not need access to the typed data, there is no need for deserialization and, therefore, C++ type support.
 In this way, we can handle arbitrary data coming from the middleware (as long as we load type support for the middleware).
-This is exactly how [rosbag2](https://github.com/ros2/rosbag2/tree/e4ce24cdfa7e24c6d2c025ecc38ab1157a0eecc8/rosbag2_transport) works; defining generic publishers and subscriptions.
-In fact, the generic publisher and subscription implementation is being moved to a common location that the domain bridge can leverage once available (see https://github.com/ros2/rclcpp/pull/1452).
+The domain bridge currently leverages the generic publisher and subscription implementations available in rclcpp.
 
 ### QoS mapping
 
@@ -306,3 +305,19 @@ Pros:
 Cons:
 - Not obvious how to handle missing messages during subscription re-creation
 - Substantially more complex to implement.
+
+### Bridging service
+
+It is not currently possible to create a service or client with only the type name and topic name, thus we cannot bridge services dynamically from a configuration file.
+It is possible though to do that statically, by using the `bridge_service()` template method:
+
+```cpp
+  domain_bridge::DomainBridge bridge;
+  bridge.bridge_service<example_interfaces::srv::AddTwoInts>("add_two_ints", domain_1, domain_2);
+```
+
+That will bridge a service server from the domain `domain_1` to the domain `domain_2`, as shown in the following diagram:
+
+![](service_example.png)
+
+You can create your own executable based in the one in `src/domain_bridge.cpp`, allowing your node to bridge topics based on a configuration files and also bridge some predetermined services!!!
