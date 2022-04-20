@@ -1,1 +1,1 @@
-{"base": "aed0774", "parent": "debian/rolling/domain_bridge", "previous": "4a93919", "trim": "", "trimbase": ""}
+{"base": "c97469f", "parent": "debian/humble/domain_bridge", "previous": "c3d4774", "trim": "", "trimbase": ""}
