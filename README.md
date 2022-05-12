@@ -59,6 +59,14 @@ Use the `--help` option for more usage information:
 ros2 run domain_bridge domain_bridge --help
 ```
 
+You can also load composable nodes alongside the domain bridge to allow for intra-process communication.
+Use the extra argument `domain_id` to set the domain ID for each loaded component:
+
+```sh
+ros2 component load /ComponentManager composition composition::Talker -e domain_id:=1
+ros2 component load /ComponentManager composition composition::Listener -e domain_id:=2
+```
+
 ### Launch
 
 You can also use the example launch script, which takes a required launch argument `config`:
@@ -68,6 +76,10 @@ ros2 launch domain_bridge domain_bridge.launch.xml config:=examples/example_brid
 ```
 
 You can also override domain IDs with optional launch arguments `from_domain` and `to_domain`.
+
+To reverse the `from` and `to` domain IDs for a topic, set the `reversed` argument to `true`.
+
+To enable bidirectional bridging of a topic, set the `bidirectional` argument to `true`.
 
 Here is an example of including the domain bridge launch script into your own:
 
@@ -84,4 +96,4 @@ Here is an example of including the domain bridge launch script into your own:
 
 ### C++ library
 
-There is a C++ API that can be integrated into your own process, you can find the [API docs here](TODO).
+There is a C++ API that can be integrated into your own process, you can find the [API docs here](https://docs.ros.org/en/ros2_packages/rolling/api/domain_bridge/index.html).
