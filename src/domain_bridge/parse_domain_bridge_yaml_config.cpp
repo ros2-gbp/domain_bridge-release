@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "domain_bridge/domain_bridge_config.hpp"
 #include "domain_bridge/topic_bridge_options.hpp"
@@ -146,6 +147,27 @@ static QosOptions parse_qos_options(YAML::Node yaml_node, const std::string & fi
 
 DomainBridgeConfig parse_domain_bridge_yaml_config(std::filesystem::path file_path)
 {
+  DomainBridgeConfig domain_bridge_config;
+  update_domain_bridge_config_from_yaml(file_path, domain_bridge_config);
+  return domain_bridge_config;
+}
+
+DomainBridgeConfig
+parse_domain_bridge_yaml_configs(const std::vector<std::filesystem::path> & file_paths)
+{
+  DomainBridgeConfig domain_bridge_config;
+  for (const auto & file_path : file_paths) {
+    update_domain_bridge_config_from_yaml(file_path, domain_bridge_config);
+  }
+  return domain_bridge_config;
+}
+
+
+void
+update_domain_bridge_config_from_yaml(
+  std::filesystem::path file_path,
+  DomainBridgeConfig & domain_bridge_config)
+{
   // Check if file exists
   if (!std::filesystem::is_regular_file(file_path)) {
     throw YamlParsingError(file_path, "file does not exist");
@@ -153,7 +175,6 @@ DomainBridgeConfig parse_domain_bridge_yaml_config(std::filesystem::path file_pa
 
   YAML::Node config = YAML::LoadFile(file_path);
 
-  DomainBridgeConfig domain_bridge_config;
   if (config["name"]) {
     domain_bridge_config.options.name(config["name"].as<std::string>());
   }
@@ -170,6 +191,20 @@ DomainBridgeConfig parse_domain_bridge_yaml_config(std::filesystem::path file_pa
   if (config["to_domain"]) {
     default_to_domain = config["to_domain"].as<std::size_t>();
     is_default_to_domain = true;
+  }
+  if (config["mode"]) {
+    try {
+      auto mode_str = config["mode"].as<std::string>();
+      if ("compress" == mode_str) {
+        domain_bridge_config.options.mode(DomainBridgeOptions::Mode::Compress);
+      } else if ("decompress" == mode_str) {
+        domain_bridge_config.options.mode(DomainBridgeOptions::Mode::Decompress);
+      } else if ("normal" != mode_str) {
+        throw YamlParsingError(file_path, "unsupported mode value '" + mode_str + "'");
+      }
+    } catch (const YAML::BadConversion &) {
+      throw YamlParsingError(file_path, "mode must be an string");
+    }
   }
 
   if (config["topics"]) {
@@ -215,12 +250,18 @@ DomainBridgeConfig parse_domain_bridge_yaml_config(std::filesystem::path file_pa
       }
       options.qos_options(parse_qos_options(topic_info, file_path));
 
+      if (topic_info["bidirectional"]) {
+        options.bidirectional(topic_info["bidirectional"].as<bool>());
+      }
+
+      if (topic_info["reversed"]) {
+        options.reversed(topic_info["reversed"].as<bool>());
+      }
+
       // Add topic bridge to config
       domain_bridge_config.topics.push_back({{topic, type, from_domain_id, to_domain_id}, options});
     }
   }
-
-  return domain_bridge_config;
 }
 
 }  // namespace domain_bridge

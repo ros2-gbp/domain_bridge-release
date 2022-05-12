@@ -61,4 +61,82 @@ TopicBridgeOptions::remap_name(const std::string & remap_name)
   return *this;
 }
 
+const bool &
+TopicBridgeOptions::bidirectional() const
+{
+  return bidirectional_;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::bidirectional(const bool & bidirectional)
+{
+  bidirectional_ = bidirectional;
+  return *this;
+}
+
+const bool &
+TopicBridgeOptions::reversed() const
+{
+  return reversed_;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::reversed(const bool & reversed)
+{
+  reversed_ = reversed;
+  return *this;
+}
+
+const std::chrono::milliseconds &
+TopicBridgeOptions::delay() const
+{
+  return delay_;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::delay(const std::chrono::milliseconds & delay)
+{
+  delay_ = delay;
+  return *this;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::wait_for_subscription(bool value)
+{
+  wait_for_subscription_ = value;
+  return *this;
+}
+
+bool
+TopicBridgeOptions::wait_for_subscription() const
+{
+  return wait_for_subscription_;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::wait_for_publisher(bool value)
+{
+  wait_for_publisher_ = value;
+  return *this;
+}
+
+bool
+TopicBridgeOptions::wait_for_publisher() const
+{
+  return wait_for_publisher_;
+}
+
+TopicBridgeOptions &
+TopicBridgeOptions::auto_remove(TopicBridgeOptions::AutoRemove value)
+{
+  auto_remove_ = value;
+  return *this;
+}
+
+TopicBridgeOptions::AutoRemove
+TopicBridgeOptions::auto_remove() const
+{
+  return auto_remove_;
+}
+
 }  // namespace domain_bridge
