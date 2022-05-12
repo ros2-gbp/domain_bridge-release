@@ -53,6 +53,24 @@ TEST_F(TestParseDomainBridgeYamlConfig, name)
   EXPECT_EQ(config.topics.size(), 0u);
 }
 
+TEST_F(TestParseDomainBridgeYamlConfig, mode)
+{
+  {
+    const std::string yaml_path = (
+      test_yaml_dir_ / std::filesystem::path{"compress_mode.yaml"}).string();
+    auto config = domain_bridge::parse_domain_bridge_yaml_config(yaml_path);
+    EXPECT_EQ(config.options.mode(), domain_bridge::DomainBridgeOptions::Mode::Compress);
+    EXPECT_EQ(config.topics.size(), 0u);
+  }
+  {
+    const std::string yaml_path = (
+      test_yaml_dir_ / std::filesystem::path{"decompress_mode.yaml"}).string();
+    auto config = domain_bridge::parse_domain_bridge_yaml_config(yaml_path);
+    EXPECT_EQ(config.options.mode(), domain_bridge::DomainBridgeOptions::Mode::Decompress);
+    EXPECT_EQ(config.topics.size(), 0u);
+  }
+}
+
 TEST_F(TestParseDomainBridgeYamlConfig, topics)
 {
   std::vector<domain_bridge::TopicBridge> expected = {
@@ -63,6 +81,31 @@ TEST_F(TestParseDomainBridgeYamlConfig, topics)
   };
   const std::string yaml_path = (test_yaml_dir_ / std::filesystem::path{"topics.yaml"}).string();
   auto config = domain_bridge::parse_domain_bridge_yaml_config(yaml_path);
+  ASSERT_EQ(config.topics.size(), expected.size());
+  for (std::size_t i = 0u; i < config.topics.size(); ++i) {
+    EXPECT_EQ(config.topics[i].first.topic_name, expected[i].topic_name);
+    EXPECT_EQ(config.topics[i].first.type_name, expected[i].type_name);
+    EXPECT_EQ(config.topics[i].first.from_domain_id, expected[i].from_domain_id);
+    EXPECT_EQ(config.topics[i].first.to_domain_id, expected[i].to_domain_id);
+  }
+}
+
+TEST_F(TestParseDomainBridgeYamlConfig, multiple_files)
+{
+  std::vector<domain_bridge::TopicBridge> expected = {
+    {"baz", "test_msgs/msg/Empty", 10, 7},
+    {"/foo/bar", "test_msgs/msg/BasicTypes", 6, 10},
+    {"foo", "test_msgs/msg/Strings", 3, 4},
+    {"foo", "test_msgs/msg/Strings", 3, 4},
+    {"baz", "test_msgs/msg/Empty", 7, 11},
+    {"/foo/bar", "test_msgs/msg/BasicTypes", 6, 11},
+    {"foo", "test_msgs/msg/Strings", 7, 4},
+    {"foobar", "test_msgs/msg/Strings", 3, 4}
+  };
+  std::vector<std::filesystem::path> file_paths;
+  file_paths.push_back((test_yaml_dir_ / std::filesystem::path{"topics.yaml"}));
+  file_paths.push_back((test_yaml_dir_ / std::filesystem::path{"default_domain_ids.yaml"}));
+  auto config = domain_bridge::parse_domain_bridge_yaml_configs(file_paths);
   ASSERT_EQ(config.topics.size(), expected.size());
   for (std::size_t i = 0u; i < config.topics.size(); ++i) {
     EXPECT_EQ(config.topics[i].first.topic_name, expected[i].topic_name);
@@ -104,12 +147,14 @@ TEST_F(TestParseDomainBridgeYamlConfig, topic_options)
       .depth(42u)
       .deadline(123456)
       .lifespan_auto())
-    .remap_name("bar/remapped"),
+    .remap_name("bar/remapped")
+    .bidirectional(true),
     domain_bridge::TopicBridgeOptions().qos_options(
       domain_bridge::QosOptions()
       .deadline_auto()
       .lifespan(-5))
     .remap_name("")
+    .reversed(true)
   };
   const std::string yaml_path =
     (test_yaml_dir_ / std::filesystem::path{"topic_options.yaml"}).string();
@@ -128,6 +173,8 @@ TEST_F(TestParseDomainBridgeYamlConfig, topic_options)
     EXPECT_EQ(
       config.topics[i].second.qos_options().depth(), expected[i].qos_options().depth());
     EXPECT_EQ(config.topics[i].second.remap_name(), expected[i].remap_name());
+    EXPECT_EQ(config.topics[i].second.bidirectional(), expected[i].bidirectional());
+    EXPECT_EQ(config.topics[i].second.reversed(), expected[i].reversed());
   }
 }
 
@@ -200,6 +247,13 @@ TEST_F(TestParseDomainBridgeYamlConfig, invalid)
   {
     const std::string yaml_path =
       (test_yaml_dir_ / std::filesystem::path{"invalid_depth.yaml"}).string();
+    EXPECT_THROW(
+      domain_bridge::parse_domain_bridge_yaml_config(yaml_path), domain_bridge::YamlParsingError);
+  }
+  // Invalid mode
+  {
+    const std::string yaml_path =
+      (test_yaml_dir_ / std::filesystem::path{"invalid_mode.yaml"}).string();
     EXPECT_THROW(
       domain_bridge::parse_domain_bridge_yaml_config(yaml_path), domain_bridge::YamlParsingError);
   }
